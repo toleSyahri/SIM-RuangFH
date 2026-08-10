@@ -193,6 +193,73 @@
             </form>
         </div>
 
+        <!-- FORM KELOLA RUANGAN (KHUSUS ADMIN: TAMBAH / EDIT) -->
+        <div id="section-admin-kelola-ruang" class="card hidden">
+            <h3>🏫 Kelola Data Ruangan</h3>
+            <div id="ruang-error" class="error-banner hidden"></div>
+            <form onsubmit="event.preventDefault(); simpanRuang();">
+                <input type="hidden" id="ruang-row-index">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lantai</label>
+                        <input type="text" id="ruang-lantai" placeholder="Contoh: 2" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kode Ruang</label>
+                        <input type="text" id="ruang-code" placeholder="Contoh: R.201" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kapasitas Kursi</label>
+                        <input type="text" id="ruang-kursi" placeholder="Contoh: 40" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>TV Smart</label>
+                        <select id="ruang-tv">
+                            <option value="Ada">Ada</option>
+                            <option value="Tidak Ada">Tidak Ada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>AC</label>
+                        <select id="ruang-ac">
+                            <option value="Ada">Ada</option>
+                            <option value="Tidak Ada">Tidak Ada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Kontak</label>
+                        <select id="ruang-stopkontak">
+                            <option value="Ada">Ada</option>
+                            <option value="Tidak Ada">Tidak Ada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Papan Tulis</label>
+                        <select id="ruang-papantulis">
+                            <option value="Ada">Ada</option>
+                            <option value="Tidak Ada">Tidak Ada</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Waktu Layanan</label>
+                        <input type="text" id="ruang-waktu" placeholder="Contoh: 07:00 - 21:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Program</label>
+                        <input type="text" id="ruang-program" placeholder="Contoh: S1 Ilmu Hukum" required>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-success" id="btn-ruang-submit">Simpan Data Ruangan</button>
+                    <button type="button" id="btn-ruang-batal" class="hidden" style="background:#6c757d;" onclick="batalEditRuang()">Batal Edit</button>
+                </div>
+            </form>
+        </div>
+
         <!-- TABEL RUANG -->
         <h3>Daftar Fasilitas Ruang Perkuliahan FH UNESA</h3>
         <div id="loading-ruangan" class="loading">Memuat data ruangan dari Google Sheets...</div>
@@ -210,6 +277,7 @@
                         <th>Papan Tulis</th>
                         <th>Waktu Layanan</th>
                         <th>Program</th>
+                        <th id="th-aksi-ruangan" class="hidden">Aksi Admin</th>
                     </tr>
                 </thead>
                 <tbody id="tabel-ruangan"></tbody>
@@ -483,6 +551,8 @@
         const isAdmin = currentUser.role === "admin";
         document.getElementById("section-admin-vip").classList.toggle("hidden", !isAdmin);
         document.getElementById("th-aksi-pinjaman").classList.toggle("hidden", !isAdmin);
+        document.getElementById("section-admin-kelola-ruang").classList.toggle("hidden", !isAdmin);
+        document.getElementById("th-aksi-ruangan").classList.toggle("hidden", !isAdmin);
 
         loadDataRuangan();
         loadDataPinjaman();
@@ -523,8 +593,11 @@
 
     function renderTabelRuangan(rooms) {
         const tbody = document.getElementById("tabel-ruangan");
+        const isAdmin = currentUser && currentUser.role === "admin";
+        const colspan = isAdmin ? 10 : 9;
+
         if (!rooms || rooms.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9">Belum ada data ruangan.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${colspan}">Belum ada data ruangan.</td></tr>`;
             return;
         }
         tbody.innerHTML = rooms.map(r => `
@@ -538,8 +611,18 @@
                 <td>${escapeHtml(r.papanTulis)}</td>
                 <td>${escapeHtml(r.waktuLayanan)}</td>
                 <td>${escapeHtml(r.program)}</td>
+                ${isAdmin ? aksiRuanganHtml(r) : ""}
             </tr>
         `).join("");
+    }
+
+    function aksiRuanganHtml(r) {
+        return `
+            <td>
+                <button onclick="editRuang(${r.rowIndex})" class="btn-warning btn-sm" type="button">Edit</button>
+                <button onclick="hapusRuang(${r.rowIndex})" class="btn-danger btn-sm" type="button">Hapus</button>
+            </td>
+        `;
     }
 
     function populateDropdownRuang(rooms) {
@@ -550,6 +633,109 @@
         const selectVip = document.getElementById("vip-ruang");
         if (selectPinjam) selectPinjam.innerHTML = options;
         if (selectVip) selectVip.innerHTML = options;
+    }
+
+    /* ================================================================
+       AKSI ADMIN: KELOLA DATA RUANGAN (TAMBAH / EDIT / HAPUS)
+       ================================================================ */
+    function editRuang(rowIndex) {
+        const r = dataRuanganGlobal.find(x => x.rowIndex === rowIndex);
+        if (!r) return;
+
+        document.getElementById("ruang-row-index").value = r.rowIndex;
+        document.getElementById("ruang-lantai").value = r.lantai;
+        document.getElementById("ruang-code").value = r.code;
+        document.getElementById("ruang-kursi").value = r.kursi;
+        document.getElementById("ruang-tv").value = r.tvSmart === "Ada" ? "Ada" : "Tidak Ada";
+        document.getElementById("ruang-ac").value = r.ac === "Ada" ? "Ada" : "Tidak Ada";
+        document.getElementById("ruang-stopkontak").value = r.stopKontak === "Ada" ? "Ada" : "Tidak Ada";
+        document.getElementById("ruang-papantulis").value = r.papanTulis === "Ada" ? "Ada" : "Tidak Ada";
+        document.getElementById("ruang-waktu").value = r.waktuLayanan;
+        document.getElementById("ruang-program").value = r.program;
+
+        document.getElementById("btn-ruang-submit").textContent = "Update Data Ruangan";
+        document.getElementById("btn-ruang-batal").classList.remove("hidden");
+        clearError('ruang-error');
+        document.getElementById("section-admin-kelola-ruang").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function batalEditRuang() {
+        document.getElementById("ruang-row-index").value = "";
+        document.querySelector("#section-admin-kelola-ruang form").reset();
+        document.getElementById("btn-ruang-submit").textContent = "Simpan Data Ruangan";
+        document.getElementById("btn-ruang-batal").classList.add("hidden");
+        clearError('ruang-error');
+    }
+
+    function simpanRuang() {
+        clearError('ruang-error');
+        const rowIndex = document.getElementById("ruang-row-index").value;
+        const lantai = document.getElementById("ruang-lantai").value.trim();
+        const code = document.getElementById("ruang-code").value.trim();
+        const kursi = document.getElementById("ruang-kursi").value.trim();
+        const tvSmart = document.getElementById("ruang-tv").value;
+        const ac = document.getElementById("ruang-ac").value;
+        const stopKontak = document.getElementById("ruang-stopkontak").value;
+        const papanTulis = document.getElementById("ruang-papantulis").value;
+        const waktuLayanan = document.getElementById("ruang-waktu").value.trim();
+        const program = document.getElementById("ruang-program").value.trim();
+
+        if (!lantai || !code || !kursi || !waktuLayanan || !program) {
+            showError('ruang-error', 'Semua field wajib diisi.');
+            return;
+        }
+
+        // Cegah kode ruang duplikat (kecuali saat mengedit baris itu sendiri)
+        const duplikat = dataRuanganGlobal.find(r => r.code === code && String(r.rowIndex) !== String(rowIndex));
+        if (duplikat) {
+            showError('ruang-error', `Kode ruang "${code}" sudah dipakai. Gunakan kode lain.`);
+            return;
+        }
+
+        const defaultText = rowIndex ? "Update Data Ruangan" : "Simpan Data Ruangan";
+        setButtonLoading('btn-ruang-submit', true, 'Menyimpan...', defaultText);
+
+        const url = `${SCRIPT_URL}?action=saveRoom&rowIndex=${encodeURIComponent(rowIndex)}&lantai=${encodeURIComponent(lantai)}&code=${encodeURIComponent(code)}&kursi=${encodeURIComponent(kursi)}&tvSmart=${encodeURIComponent(tvSmart)}&ac=${encodeURIComponent(ac)}&stopKontak=${encodeURIComponent(stopKontak)}&papanTulis=${encodeURIComponent(papanTulis)}&waktuLayanan=${encodeURIComponent(waktuLayanan)}&program=${encodeURIComponent(program)}`;
+        executeJSONP(url, 'cb_saveRoom', function (msg) {
+            setButtonLoading('btn-ruang-submit', false, 'Menyimpan...', defaultText);
+            showError('ruang-error', msg);
+        });
+    }
+
+    function cb_saveRoom(response) {
+        const rowIndex = document.getElementById("ruang-row-index").value;
+        const defaultText = rowIndex ? "Update Data Ruangan" : "Simpan Data Ruangan";
+        setButtonLoading('btn-ruang-submit', false, 'Menyimpan...', defaultText);
+        alert(response.message);
+        if (response.status === "success") {
+            batalEditRuang();
+            loadDataRuangan();
+        } else {
+            showError('ruang-error', response.message || 'Gagal menyimpan data ruangan.');
+        }
+    }
+
+    function hapusRuang(rowIndex) {
+        const r = dataRuanganGlobal.find(x => x.rowIndex === rowIndex);
+        const label = r ? r.code : ('baris ' + rowIndex);
+        if (!confirm(`Yakin ingin menghapus ruangan "${label}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+
+        const url = `${SCRIPT_URL}?action=deleteRoom&rowIndex=${rowIndex}`;
+        executeJSONP(url, 'cb_deleteRoom', function (msg) {
+            alert(msg);
+        });
+    }
+
+    function cb_deleteRoom(response) {
+        alert(response.message);
+        if (response.status === "success") {
+            if (document.getElementById("ruang-row-index").value == "") {
+                // no-op, form already empty
+            } else {
+                batalEditRuang();
+            }
+            loadDataRuangan();
+        }
     }
 
     /* ================================================================
