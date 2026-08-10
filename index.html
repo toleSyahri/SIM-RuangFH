@@ -534,9 +534,9 @@
         setButtonLoading('btn-register-submit', false, 'Mendaftarkan...', 'Daftarkan Akun Saya');
         if (response.status === "success") {
             switchAuthTab('login');
-            showError('login-error', ''); // reset tampilan
             clearError('login-error');
             alert(response.message);
+            if (response.waUrl) window.open(response.waUrl, '_blank');
         } else {
             showError('register-error', response.message || 'Pendaftaran gagal. Silakan coba lagi.');
         }
