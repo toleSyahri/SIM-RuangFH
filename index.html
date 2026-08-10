@@ -15,6 +15,9 @@
     .toggle { text-align: center; margin-top: 10px; }
     .contact-info { text-align: center; margin-top: 20px; font-size: 14px; }
     .contact-info img { vertical-align: middle; margin-left: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
   </style>
 </head>
 <body>
@@ -24,6 +27,7 @@
   <span>SIM-RUANG UNESA</span>
 </header>
 
+<!-- Login -->
 <div class="container" id="section-auth">
   <h2>Login SIM-RUANG</h2>
   <input type="text" id="username" placeholder="Email/NIM/NIP">
@@ -34,6 +38,7 @@
   </div>
 </div>
 
+<!-- Registrasi -->
 <div class="container hidden" id="section-register">
   <h2>Registrasi SIM-RUANG</h2>
   <input type="text" id="reg-nama" placeholder="Nama Lengkap">
@@ -49,15 +54,49 @@
   </div>
 </div>
 
-<div class="contact-info">
-  <strong>Admin SIM-RUANG:</strong> Syahri
-  <a href="https://wa.me/6281331382680" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="20">
-  </a>
+<!-- Dashboard -->
+<div id="section-dashboard" class="hidden">
+  <h2>Dashboard SIM-RUANG</h2>
+  <p>Selamat datang, <span id="user-display"></span> (<span id="role-display"></span>)</p>
+
+  <div id="section-admin-vip" class="hidden">
+    <h3>Menu Admin</h3>
+    <button onclick="addVipBooking()">Booking VIP</button>
+  </div>
+
+  <h3>Data Ruangan</h3>
+  <table id="table-ruangan">
+    <thead>
+      <tr>
+        <th>Lantai</th><th>Kode</th><th>Kursi</th><th>TV</th><th>AC</th>
+        <th>Stop Kontak</th><th>Papan Tulis</th><th>Waktu Layanan</th><th>Program</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Data Peminjaman</h3>
+  <table id="table-peminjaman">
+    <thead>
+      <tr>
+        <th>Nama</th><th>Ruangan</th><th>Tanggal</th><th>Jam</th><th>Status</th>
+        <th id="th-aksi-pinjaman" class="hidden">Aksi (Admin)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="contact-info">
+    <strong>Admin SIM-RUANG:</strong> Syahri
+    <a href="https://wa.me/6281331382680" target="_blank">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="20">
+    </a>
+  </div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj4hYY-pF1IbsKgTEYqW5dGrrUJYaC7e_S4SyR8dVlKkK35oSx-1I2Vfdz07sBoTT4Tg/exec"; // ganti dengan URL Web App hasil deploy
+const SCRIPT_URL = "PASTE_WEB_APP_URL_HERE"; // ganti dengan URL Web App hasil deploy
+let currentUser = null;
 
 function showRegister() {
   document.getElementById("section-auth").classList.add("hidden");
@@ -80,11 +119,36 @@ function login() {
 
 function cb_login(response) {
   if (response.status === "success") {
-    alert("Login berhasil sebagai " + response.role);
-    // TODO: masuk ke dashboard
+    currentUser = {
+      nama: response.user.nama,
+      nim: response.user.nim,
+      hp: response.user.hp,
+      email: response.user.email,
+      role: response.role
+    };
+    masukDashboard();
   } else {
-    alert(response.message || "Login gagal!");
+    alert(response.message || "Login Gagal!");
   }
+}
+
+function masukDashboard() {
+  document.getElementById("section-auth").classList.add("hidden");
+  document.getElementById("section-register").classList.add("hidden");
+  document.getElementById("section-dashboard").classList.remove("hidden");
+  document.getElementById("user-display").innerText = currentUser.nama;
+  document.getElementById("role-display").innerText = currentUser.role.toUpperCase();
+
+  if (currentUser.role === "admin") {
+    document.getElementById("section-admin-vip").classList.remove("hidden");
+    document.getElementById("th-aksi-pinjaman").classList.remove("hidden");
+  } else {
+    document.getElementById("section-admin-vip").classList.add("hidden");
+    document.getElementById("th-aksi-pinjaman").classList.add("hidden");
+  }
+
+  loadDataRuangan();
+  loadDataPinjaman();
 }
 
 // Registrasi
@@ -110,6 +174,82 @@ function cb_register(response) {
   } else {
     alert(response.message || "Registrasi gagal!");
   }
+}
+
+// Load Data Ruangan
+function loadDataRuangan() {
+  const url = SCRIPT_URL + "?action=getRooms&callback=cb_rooms";
+  const script = document.createElement("script");
+  script.src = url;
+  document.body.appendChild(script);
+}
+
+function cb_rooms(response) {
+  const tbody = document.querySelector("#table-ruangan tbody");
+  tbody.innerHTML = "";
+  response.data.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.lantai}</td>
+      <td>${r.code}</td>
+      <td>${r.kursi}</td>
+      <td>${r.tvSmart}</td>
+      <td>${r.ac}</td>
+      <td>${r.stopKontak}</td>
+      <td>${r.papanTulis}</td>
+      <td>${r.waktuLayanan}</td>
+      <td>${r.program}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Load Data Peminjaman
+function loadDataPinjaman() {
+  const url = SCRIPT_URL + "?action=getBookings&callback=cb_bookings";
+  const script = document.createElement("script");
+  script.src = url;
+  document.body.appendChild(script);
+}
+
+function cb_bookings(response) {
+  const tbody = document.querySelector("#table-peminjaman tbody");
+  tbody.innerHTML = "";
+  response.data.forEach(b => {
+    let badgeColor = "gray";
+    if (b.status === "Disetujui") badgeColor = "green";
+    else if (b.status === "Ditolak") badgeColor = "red";
+    else if (b.status === "Menunggu Persetujuan") badgeColor = "orange";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${b.pemohon}</td>
+      <td>${b.roomCode}</td>
+      <td>${b.tanggal}</td>
+      <td>${b.jam}</td>
+      <td><span style="color:${badgeColor}; font-weight:bold;">${b.status}</span></td>
+    `;
+    if (currentUser.role === "admin") {
+      tr.innerHTML += `
+        <td>
+          <button onclick="accBooking(${b.rowIndex})">ACC</button>
+          <button onclick="tolakBooking(${b.rowIndex})">Tolak</button>
+        </td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+// Contoh fungsi aksi admin
+function accBooking(rowIndex) {
+  alert("ACC booking row " + rowIndex);
+}
+function tolakBooking(rowIndex) {
+  alert("Tolak booking row " + rowIndex);
+}
+function addVipBooking() {
+  alert("Booking VIP ditambahkan!");
 }
 </script>
 </body>
