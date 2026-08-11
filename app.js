@@ -647,18 +647,71 @@
     let csOpened = false;
     let csWaiting = false;
 
+    const CS_QUICK_REPLIES = [
+        "Bagaimana cara daftar dan login?",
+        "Bagaimana cara mengajukan peminjaman ruangan?",
+        "Rekomendasikan ruangan untuk 30 orang dengan AC dan proyektor"
+    ];
+
     function toggleChatCS() {
         const panel = document.getElementById("cs-panel");
-        const isHidden = panel.classList.contains("hidden");
-        panel.classList.toggle("hidden");
+        if (panel.classList.contains("hidden")) {
+            openChatCS();
+        } else if (panel.classList.contains("cs-minimized")) {
+            panel.classList.remove("cs-minimized");
+            document.getElementById("cs-input").focus();
+        } else {
+            closeChatCS();
+        }
+    }
 
-        if (isHidden && !csOpened) {
+    function openChatCS() {
+        const panel = document.getElementById("cs-panel");
+        panel.classList.remove("hidden");
+        panel.classList.remove("cs-minimized");
+
+        if (!csOpened) {
             csOpened = true;
             appendChatMessage('bot', 'Halo! Saya asisten virtual SIM-RUANG FH UNESA. Saya bisa bantu:\n• Jelaskan cara daftar/login/pinjam ruangan\n• Rekomendasi ruangan sesuai kebutuhan Anda\n• Bantu menuliskan ulang pesan/keperluan jadi lebih sopan\n\nAda yang bisa saya bantu?');
+            renderQuickReplies();
         }
-        if (isHidden) {
+        document.getElementById("cs-input").focus();
+    }
+
+    function minimizeChatCS() {
+        const panel = document.getElementById("cs-panel");
+        panel.classList.toggle("cs-minimized");
+        if (!panel.classList.contains("cs-minimized")) {
             document.getElementById("cs-input").focus();
         }
+    }
+
+    function closeChatCS() {
+        const panel = document.getElementById("cs-panel");
+        panel.classList.add("hidden");
+        panel.classList.remove("cs-minimized");
+    }
+
+    function renderQuickReplies() {
+        const container = document.getElementById("cs-messages");
+        const wrap = document.createElement("div");
+        wrap.className = "cs-quick-replies";
+        wrap.id = "cs-quick-replies";
+        CS_QUICK_REPLIES.forEach(q => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "cs-quick-chip";
+            chip.textContent = q;
+            chip.onclick = function () {
+                const qr = document.getElementById("cs-quick-replies");
+                if (qr) qr.remove();
+                document.getElementById("cs-input").value = q;
+                kirimPesanCS();
+            };
+            wrap.appendChild(chip);
+        });
+        container.appendChild(wrap);
+        container.scrollTop = container.scrollHeight;
     }
 
     function appendChatMessage(role, text) {
@@ -681,6 +734,9 @@
             appendChatMessage('bot', 'Pesan terlalu panjang, mohon persingkat ya (maks. sekitar 1500 karakter).');
             return;
         }
+
+        const qr = document.getElementById("cs-quick-replies");
+        if (qr) qr.remove();
 
         appendChatMessage('user', text);
         input.value = "";
