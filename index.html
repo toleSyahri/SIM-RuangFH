@@ -44,6 +44,41 @@
         .hidden { display: none; }
         .loading { text-align: center; color: #666; font-style: italic; margin: 10px 0; }
         .error-banner { background: #f8d7da; color: #721c24; padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px; text-align: center; }
+
+        /* --- WIDGET ASISTEN CUSTOMER SERVICE (AI) --- */
+        #cs-toggle-btn {
+            position: fixed; bottom: 20px; right: 20px; width: 58px; height: 58px;
+            border-radius: 50%; background: #003366; color: white; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25); z-index: 10000; cursor: pointer;
+            border: none; margin: 0; padding: 0;
+        }
+        #cs-toggle-btn:hover { background: #002244; }
+
+        #cs-panel {
+            position: fixed; bottom: 90px; right: 20px; width: 340px; max-width: calc(100vw - 30px);
+            height: 460px; max-height: calc(100vh - 120px); background: white; border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3); z-index: 10000; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        #cs-panel-header {
+            background: #003366; color: white; padding: 14px 16px; font-weight: bold; font-size: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #cs-panel-header small { display: block; font-weight: normal; font-size: 11px; opacity: 0.85; margin-top: 2px; }
+        #cs-close-btn { background: transparent; color: white; width: auto; padding: 2px 8px; margin: 0; font-size: 18px; }
+        #cs-panel-header #cs-close-btn:hover { background: rgba(255,255,255,0.15); }
+
+        #cs-messages { flex: 1; overflow-y: auto; padding: 14px; background: #f0f2f5; }
+        .cs-msg { max-width: 85%; margin-bottom: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
+        .cs-msg-user { background: #003366; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+        .cs-msg-bot { background: white; color: #333; margin-right: auto; border: 1px solid #dee2e6; border-bottom-left-radius: 2px; }
+        .cs-msg-typing { background: white; color: #888; font-style: italic; border: 1px solid #dee2e6; margin-right: auto; }
+
+        #cs-input-row { display: flex; gap: 6px; padding: 10px; border-top: 1px solid #dee2e6; background: white; }
+        #cs-input-row input { flex: 1; margin: 0; }
+        #cs-input-row button { width: auto; padding: 10px 14px; margin: 0; }
+        #cs-disclaimer { font-size: 10.5px; color: #888; text-align: center; padding: 4px 10px 8px; background: white; }
     </style>
 </head>
 <body>
@@ -311,6 +346,24 @@
             <strong>Petugas Pengelola / Admin:</strong> Syahri (syahrisyahri@unesa.ac.id) | <strong>WA:</strong> 081331382680
         </div>
     </div>
+</div>
+
+<!-- WIDGET ASISTEN CUSTOMER SERVICE (AI) -->
+<button id="cs-toggle-btn" onclick="toggleChatCS()" type="button" title="Tanya Asisten CS">💬</button>
+<div id="cs-panel" class="hidden">
+    <div id="cs-panel-header">
+        <div>
+            Asisten CS SIM-RUANG
+            <small>Bantuan, rekomendasi ruangan & draf pesan</small>
+        </div>
+        <button id="cs-close-btn" onclick="toggleChatCS()" type="button">✕</button>
+    </div>
+    <div id="cs-messages"></div>
+    <form id="cs-input-row" onsubmit="event.preventDefault(); kirimPesanCS();">
+        <input type="text" id="cs-input" placeholder="Tulis pertanyaan Anda..." autocomplete="off">
+        <button type="submit" id="cs-send-btn">Kirim</button>
+    </form>
+    <div id="cs-disclaimer">Jawaban dari AI, untuk hal resmi/mendesak tetap hubungi admin.</div>
 </div>
 
 <!-- MODAL RELOKASI (DROPDOWN + ALASAN PEMBERITAHUAN WA) -->
@@ -959,6 +1012,89 @@
             loadDataPinjaman();
         } else {
             alert(response.message);
+        }
+    }
+
+    /* ================================================================
+       ASISTEN CUSTOMER SERVICE (AI - GROQ)
+       ================================================================ */
+    let csHistory = [];
+    let csOpened = false;
+    let csWaiting = false;
+
+    function toggleChatCS() {
+        const panel = document.getElementById("cs-panel");
+        const isHidden = panel.classList.contains("hidden");
+        panel.classList.toggle("hidden");
+
+        if (isHidden && !csOpened) {
+            csOpened = true;
+            appendChatMessage('bot', 'Halo! Saya asisten virtual SIM-RUANG FH UNESA. Saya bisa bantu:\n• Jelaskan cara daftar/login/pinjam ruangan\n• Rekomendasi ruangan sesuai kebutuhan Anda\n• Bantu menuliskan ulang pesan/keperluan jadi lebih sopan\n\nAda yang bisa saya bantu?');
+        }
+        if (isHidden) {
+            document.getElementById("cs-input").focus();
+        }
+    }
+
+    function appendChatMessage(role, text) {
+        const container = document.getElementById("cs-messages");
+        const bubble = document.createElement("div");
+        bubble.className = "cs-msg " + (role === "user" ? "cs-msg-user" : "cs-msg-bot");
+        bubble.textContent = text;
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+        return bubble;
+    }
+
+    function kirimPesanCS() {
+        if (csWaiting) return;
+        const input = document.getElementById("cs-input");
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (text.length > 1500) {
+            appendChatMessage('bot', 'Pesan terlalu panjang, mohon persingkat ya (maks. sekitar 1500 karakter).');
+            return;
+        }
+
+        appendChatMessage('user', text);
+        input.value = "";
+        csWaiting = true;
+        document.getElementById("cs-send-btn").disabled = true;
+
+        const container = document.getElementById("cs-messages");
+        const typingBubble = document.createElement("div");
+        typingBubble.className = "cs-msg cs-msg-bot cs-msg-typing";
+        typingBubble.id = "cs-typing-indicator";
+        typingBubble.textContent = "Sedang mengetik...";
+        container.appendChild(typingBubble);
+        container.scrollTop = container.scrollHeight;
+
+        const historyToSend = csHistory.slice(-6);
+        const url = `${SCRIPT_URL}?action=askAssistant&message=${encodeURIComponent(text)}&history=${encodeURIComponent(JSON.stringify(historyToSend))}`;
+
+        executeJSONP(url, 'cb_askAssistant', function (msg) {
+            finishCsTyping();
+            appendChatMessage('bot', msg);
+        });
+
+        csHistory.push({ role: 'user', content: text });
+    }
+
+    function finishCsTyping() {
+        csWaiting = false;
+        document.getElementById("cs-send-btn").disabled = false;
+        const typing = document.getElementById("cs-typing-indicator");
+        if (typing) typing.remove();
+    }
+
+    function cb_askAssistant(response) {
+        finishCsTyping();
+        if (response.status === "success") {
+            appendChatMessage('bot', response.reply);
+            csHistory.push({ role: 'assistant', content: response.reply });
+        } else {
+            appendChatMessage('bot', response.message || 'Maaf, asisten sedang tidak dapat merespons. Silakan hubungi admin.');
         }
     }
 </script>
