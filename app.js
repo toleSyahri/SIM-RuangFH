@@ -231,6 +231,7 @@
         document.getElementById("th-aksi-pinjaman").classList.toggle("hidden", !isAdmin);
         document.getElementById("th-aksi-ruangan").classList.toggle("hidden", !isAdmin);
         document.getElementById("dash-tab-btn-vip").classList.toggle("hidden", !isAdmin);
+        document.getElementById("dash-tab-btn-laporan").classList.toggle("hidden", !isAdmin);
         document.getElementById("btn-toggle-kelola-ruang").classList.toggle("hidden", !isAdmin);
         // section-admin-kelola-ruang tetap tersembunyi secara default (baik admin
         // maupun bukan) -- admin membukanya sendiri lewat tombol "+ Tambah/Kelola
@@ -335,6 +336,14 @@
         const selectVip = document.getElementById("vip-ruang");
         if (selectPinjam) selectPinjam.innerHTML = options;
         if (selectVip) selectVip.innerHTML = options;
+
+        const selectLaporan = document.getElementById("laporan-ruang");
+        if (selectLaporan) {
+            const optionsLaporan = ['<option value="">-- Semua Ruangan --</option>']
+                .concat(rooms.map(r => `<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)}</option>`))
+                .join("");
+            selectLaporan.innerHTML = optionsLaporan;
+        }
     }
 
     function filterTabelRuangan() {
@@ -835,4 +844,178 @@
         } else {
             appendChatMessage('bot', response.message || 'Maaf, asisten sedang tidak dapat merespons. Silakan hubungi admin.');
         }
+    }
+
+    /* ================================================================
+       LAPORAN (KHUSUS ADMIN)
+       ================================================================ */
+    let lastLaporanData = null;
+
+    function generateLaporan() {
+        const mulai = document.getElementById("laporan-tanggal-mulai").value;
+        const akhir = document.getElementById("laporan-tanggal-akhir").value;
+        const ruangFilter = document.getElementById("laporan-ruang").value;
+
+        if (mulai && akhir && mulai > akhir) {
+            alert("Tanggal 'Dari' tidak boleh lebih besar dari tanggal 'Sampai'.");
+            return;
+        }
+
+        // Filter data peminjaman sesuai periode & ruangan yang dipilih
+        let filtered = dataPinjamanGlobal.filter(b => {
+            if (mulai && b.tanggal < mulai) return false;
+            if (akhir && b.tanggal > akhir) return false;
+            if (ruangFilter && b.roomCode !== ruangFilter) return false;
+            return true;
+        });
+
+        // Statistik approval
+        const stats = { total: filtered.length, disetujui: 0, ditolak: 0, menunggu: 0 };
+        filtered.forEach(b => {
+            if (b.status === "Disetujui") stats.disetujui++;
+            else if (b.status === "Ditolak") stats.ditolak++;
+            else stats.menunggu++;
+        });
+
+        // Rekap jumlah peminjaman per ruangan (semua ruangan ikut tercantum,
+        // termasuk yang 0 kali dipakai, supaya laporan lengkap)
+        const roomsToShow = ruangFilter ? dataRuanganGlobal.filter(r => r.code === ruangFilter) : dataRuanganGlobal;
+        const rekapRuang = roomsToShow.map(r => {
+            const jumlah = filtered.filter(b => b.roomCode === r.code).length;
+            return { code: r.code, lantai: r.lantai, jumlah: jumlah };
+        }).sort((a, b) => b.jumlah - a.jumlah);
+
+        let ruangEkstremText = "";
+        const dipakai = rekapRuang.filter(r => r.jumlah > 0);
+        if (dipakai.length > 0) {
+            const tersibuk = dipakai[0];
+            const tersepi = dipakai[dipakai.length - 1];
+            ruangEkstremText = `Paling sering dipakai: ${tersibuk.code} (${tersibuk.jumlah}x) — Paling jarang dipakai: ${tersepi.code} (${tersepi.jumlah}x)`;
+        } else {
+            ruangEkstremText = "Belum ada peminjaman pada periode/ruangan ini.";
+        }
+
+        lastLaporanData = {
+            mulai: mulai || null,
+            akhir: akhir || null,
+            ruangFilter: ruangFilter || null,
+            stats: stats,
+            rekapRuang: rekapRuang,
+            detail: filtered
+        };
+
+        renderLaporanHasil();
+    }
+
+    function renderLaporanHasil() {
+        const d = lastLaporanData;
+        if (!d) return;
+
+        document.getElementById("laporan-hasil").classList.remove("hidden");
+
+        document.getElementById("laporan-stat-grid").innerHTML = `
+            <div class="laporan-stat-item"><span class="laporan-stat-value">${d.stats.total}</span><span class="laporan-stat-label">Total Pengajuan</span></div>
+            <div class="laporan-stat-item laporan-stat-success"><span class="laporan-stat-value">${d.stats.disetujui}</span><span class="laporan-stat-label">Disetujui</span></div>
+            <div class="laporan-stat-item laporan-stat-danger"><span class="laporan-stat-value">${d.stats.ditolak}</span><span class="laporan-stat-label">Ditolak</span></div>
+            <div class="laporan-stat-item laporan-stat-pending"><span class="laporan-stat-value">${d.stats.menunggu}</span><span class="laporan-stat-label">Menunggu</span></div>
+        `;
+
+        const dipakai = d.rekapRuang.filter(r => r.jumlah > 0);
+        const ekstremEl = document.getElementById("laporan-ruang-ekstrem");
+        if (dipakai.length > 0) {
+            const tersibuk = dipakai[0];
+            const tersepi = dipakai[dipakai.length - 1];
+            ekstremEl.textContent = `Paling sering dipakai: ${tersibuk.code} (${tersibuk.jumlah}x) — Paling jarang dipakai: ${tersepi.code} (${tersepi.jumlah}x)`;
+        } else {
+            ekstremEl.textContent = "Belum ada peminjaman pada periode/ruangan ini.";
+        }
+
+        document.getElementById("laporan-tabel-rekap-ruang").innerHTML = d.rekapRuang.length === 0
+            ? `<tr><td colspan="3">Tidak ada data ruangan.</td></tr>`
+            : d.rekapRuang.map(r => `<tr><td><strong>${escapeHtml(r.code)}</strong></td><td>Lantai ${escapeHtml(r.lantai)}</td><td>${r.jumlah}</td></tr>`).join("");
+
+        document.getElementById("laporan-tabel-detail").innerHTML = d.detail.length === 0
+            ? `<tr><td colspan="6">Tidak ada pengajuan pada periode/ruangan ini.</td></tr>`
+            : d.detail.map(b => `
+                <tr>
+                    <td>${escapeHtml(b.tanggal)}<br><small>(${escapeHtml(b.jam)})</small></td>
+                    <td><strong>${escapeHtml(b.roomCode)}</strong></td>
+                    <td>${escapeHtml(b.pemohon)}</td>
+                    <td>${escapeHtml(b.nim)}</td>
+                    <td>${escapeHtml(b.keperluan)}</td>
+                    <td>${statusBadgeHtml(b.status)}</td>
+                </tr>
+            `).join("");
+    }
+
+    function unduhLaporanPDF() {
+        const d = lastLaporanData;
+        if (!d) {
+            alert("Silakan klik 'Tampilkan Laporan' terlebih dahulu.");
+            return;
+        }
+        if (!window.jspdf) {
+            alert("Library pembuat PDF gagal dimuat. Periksa koneksi internet Anda lalu coba lagi.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        const periodeText = (d.mulai || d.akhir)
+            ? `Periode: ${d.mulai || "awal data"} s/d ${d.akhir || "sekarang"}`
+            : "Periode: seluruh data yang tercatat";
+        const ruangText = d.ruangFilter ? `Ruangan: ${d.ruangFilter}` : "Ruangan: semua ruangan";
+        const tanggalCetak = new Date().toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Laporan Peminjaman Ruangan", 40, 45);
+        doc.setFontSize(11);
+        doc.text("SIM-RUANG - Fakultas Hukum Universitas Negeri Surabaya", 40, 62);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(periodeText, 40, 80);
+        doc.text(ruangText, 40, 93);
+        doc.text("Dicetak: " + tanggalCetak, 40, 106);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Ringkasan Statistik", 40, 128);
+        doc.autoTable({
+            startY: 135,
+            head: [["Total Pengajuan", "Disetujui", "Ditolak", "Menunggu"]],
+            body: [[d.stats.total, d.stats.disetujui, d.stats.ditolak, d.stats.menunggu]],
+            theme: "grid",
+            headStyles: { fillColor: [11, 37, 69] },
+            margin: { left: 40, right: 40 }
+        });
+
+        let nextY = doc.lastAutoTable.finalY + 20;
+        doc.setFont("helvetica", "bold");
+        doc.text("Rekap Jumlah Peminjaman per Ruangan", 40, nextY);
+        doc.autoTable({
+            startY: nextY + 7,
+            head: [["Kode Ruang", "Lantai", "Jumlah Peminjaman"]],
+            body: d.rekapRuang.map(r => [r.code, "Lantai " + r.lantai, String(r.jumlah)]),
+            theme: "grid",
+            headStyles: { fillColor: [11, 37, 69] },
+            margin: { left: 40, right: 40 }
+        });
+
+        nextY = doc.lastAutoTable.finalY + 20;
+        doc.setFont("helvetica", "bold");
+        doc.text("Daftar Lengkap Peminjaman", 40, nextY);
+        doc.autoTable({
+            startY: nextY + 7,
+            head: [["Tanggal", "Jam", "Ruang", "Pemohon", "NIM/NIP", "Keperluan", "Status"]],
+            body: d.detail.map(b => [b.tanggal, b.jam, b.roomCode, b.pemohon, b.nim, b.keperluan, b.status]),
+            theme: "grid",
+            headStyles: { fillColor: [11, 37, 69] },
+            styles: { fontSize: 8 },
+            margin: { left: 40, right: 40 }
+        });
+
+        const namaFile = "Laporan-SIM-RUANG-" + (d.mulai || "semua") + "_sd_" + (d.akhir || "sekarang") + ".pdf";
+        doc.save(namaFile);
     }
