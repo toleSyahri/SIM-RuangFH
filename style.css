@@ -276,41 +276,6 @@ button:focus-visible { outline: 2px solid var(--navy-700); outline-offset: 2px; 
     background: var(--white);
 }
 
-/* --- LAPORAN --- */
-.laporan-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 12px;
-    margin-top: 10px;
-}
-.laporan-stat-item {
-    background: var(--white);
-    border: 1px solid var(--neutral-200);
-    border-radius: var(--radius-md);
-    padding: 16px;
-    text-align: center;
-}
-.laporan-stat-value {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--navy-950);
-}
-.laporan-stat-label {
-    display: block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-600);
-    margin-top: 4px;
-}
-.laporan-stat-success .laporan-stat-value { color: var(--success); }
-.laporan-stat-danger .laporan-stat-value { color: var(--danger); }
-.laporan-stat-pending .laporan-stat-value { color: var(--pending); }
-
-#btn-unduh-laporan { width: auto; padding: 12px 22px; margin: 20px auto 0; display: block; }
-
 .field-error { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
 
 /* --- TABEL --- */
