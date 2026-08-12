@@ -110,6 +110,17 @@
             <button onclick="logout()" class="btn-danger btn-sm" style="padding: 8px 15px; width: auto;" type="button">Logout</button>
         </div>
 
+        <!-- NAVIGASI TAB DASHBOARD -->
+        <div class="dash-tabs" id="dash-tabs">
+            <button type="button" class="dash-tab-btn active" data-tab="ajukan" onclick="switchDashTab('ajukan')">Ajukan Peminjaman</button>
+            <button type="button" class="dash-tab-btn hidden" id="dash-tab-btn-vip" data-tab="vip" onclick="switchDashTab('vip')">Booking VIP</button>
+            <button type="button" class="dash-tab-btn" data-tab="ruangan" onclick="switchDashTab('ruangan')">Data Ruangan</button>
+            <button type="button" class="dash-tab-btn" data-tab="riwayat" onclick="switchDashTab('riwayat')">Riwayat Peminjaman</button>
+        </div>
+
+        <!-- TAB: AJUKAN PEMINJAMAN -->
+        <div class="dash-tab-panel" id="dash-tab-ajukan">
+
         <!-- FORM PINJAM REGULER (USER & ADMIN) -->
         <div id="section-form-pinjam" class="card">
             <p class="eyebrow">Ajukan Peminjaman</p>
@@ -141,6 +152,12 @@
                 <button type="submit" id="btn-pinjam-submit">Kirim Pengajuan Peminjaman</button>
             </form>
         </div>
+
+        </div>
+        <!-- /TAB: AJUKAN PEMINJAMAN -->
+
+        <!-- TAB: BOOKING VIP (KHUSUS ADMIN) -->
+        <div class="dash-tab-panel hidden" id="dash-tab-vip">
 
         <!-- FORM BOOKING KILAT PIMPINAN (KHUSUS ADMIN) -->
         <div id="section-admin-vip" class="card card-vip hidden">
@@ -178,6 +195,18 @@
                 <button type="submit" class="btn-vip" id="btn-vip-submit">Eksekusi & Kunci Ruangan Sekarang</button>
             </form>
         </div>
+
+        </div>
+        <!-- /TAB: BOOKING VIP -->
+
+        <!-- TAB: DATA RUANGAN -->
+        <div class="dash-tab-panel hidden" id="dash-tab-ruangan">
+
+        <div class="tab-panel-toolbar">
+            <p class="eyebrow" style="margin:0;">Referensi</p>
+            <button type="button" id="btn-toggle-kelola-ruang" class="hidden btn-sm btn-toolbar" onclick="toggleKelolaRuangPanel()">+ Tambah / Kelola Ruangan</button>
+        </div>
+        <h3>Daftar Fasilitas Ruang Perkuliahan FH UNESA</h3>
 
         <!-- FORM KELOLA RUANGAN (KHUSUS ADMIN: TAMBAH / EDIT) -->
         <div id="section-admin-kelola-ruang" class="card hidden">
@@ -248,11 +277,12 @@
         </div>
 
         <!-- TABEL RUANG -->
-        <p class="eyebrow">Referensi</p>
-        <h3>Daftar Fasilitas Ruang Perkuliahan FH UNESA</h3>
+        <div class="table-search">
+            <input type="text" id="cari-ruangan" placeholder="Cari kode ruang, lantai, atau program studi..." oninput="filterTabelRuangan()">
+        </div>
         <div id="loading-ruangan" class="loading">Memuat data ruangan dari Google Sheets...</div>
         <div id="error-ruangan" class="error-banner hidden"></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
             <table>
                 <thead>
                     <tr>
@@ -272,12 +302,21 @@
             </table>
         </div>
 
+        </div>
+        <!-- /TAB: DATA RUANGAN -->
+
+        <!-- TAB: RIWAYAT PEMINJAMAN -->
+        <div class="dash-tab-panel hidden" id="dash-tab-riwayat">
+
         <!-- TABEL STATUS RIWAYAT & PERSETUJUAN PINJAMAN -->
-        <p class="eyebrow" style="margin-top: 30px;">Riwayat</p>
+        <p class="eyebrow">Riwayat</p>
         <h3>Daftar Status &amp; Persetujuan Peminjaman</h3>
+        <div class="table-search">
+            <input type="text" id="cari-pinjaman" placeholder="Cari nama, kode ruang, NIM/NIP, keperluan, atau status..." oninput="filterTabelPinjaman()">
+        </div>
         <div id="loading-pinjaman" class="loading">Memuat data peminjaman dari Google Sheets...</div>
         <div id="error-pinjaman" class="error-banner hidden"></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
             <table>
                 <thead>
                     <tr>
@@ -294,6 +333,9 @@
                 <tbody id="tabel-pinjaman"></tbody>
             </table>
         </div>
+
+        </div>
+        <!-- /TAB: RIWAYAT PEMINJAMAN -->
 
         <!-- FOOTER CONTACT -->
         <div class="contact-info">

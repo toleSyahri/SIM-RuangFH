@@ -10,7 +10,7 @@
 /* ================================================================
        KONFIGURASI
        ================================================================ */
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj4hYY-pF1IbsKgTEYqW5dGrrUJYaC7e_S4SyR8dVlKkK35oSx-1I2Vfdz07sBoTT4Tg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaJDJuSi6F6Z-lQycc3c3iW570d3b_zGqmgDRm-tbdeUuLXpTBGpqcgIKSmiUiOjtY/exec";
     const JSONP_TIMEOUT_MS = 15000;
 
     let currentUser = null;
@@ -229,11 +229,35 @@
         const isAdmin = currentUser.role === "admin";
         document.getElementById("section-admin-vip").classList.toggle("hidden", !isAdmin);
         document.getElementById("th-aksi-pinjaman").classList.toggle("hidden", !isAdmin);
-        document.getElementById("section-admin-kelola-ruang").classList.toggle("hidden", !isAdmin);
         document.getElementById("th-aksi-ruangan").classList.toggle("hidden", !isAdmin);
+        document.getElementById("dash-tab-btn-vip").classList.toggle("hidden", !isAdmin);
+        document.getElementById("btn-toggle-kelola-ruang").classList.toggle("hidden", !isAdmin);
+        // section-admin-kelola-ruang tetap tersembunyi secara default (baik admin
+        // maupun bukan) -- admin membukanya sendiri lewat tombol "+ Tambah/Kelola
+        // Ruangan" supaya tab Data Ruangan tidak langsung penuh dengan form.
+        document.getElementById("section-admin-kelola-ruang").classList.add("hidden");
 
+        switchDashTab('ajukan');
         loadDataRuangan();
         loadDataPinjaman();
+    }
+
+    /* ================================================================
+       NAVIGASI TAB DASHBOARD
+       ================================================================ */
+    function switchDashTab(tabId) {
+        document.querySelectorAll('.dash-tab-panel').forEach(function (p) { p.classList.add('hidden'); });
+        document.querySelectorAll('.dash-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+
+        const panel = document.getElementById('dash-tab-' + tabId);
+        if (panel) panel.classList.remove('hidden');
+
+        const btn = document.querySelector('.dash-tab-btn[data-tab="' + tabId + '"]');
+        if (btn) btn.classList.add('active');
+    }
+
+    function toggleKelolaRuangPanel() {
+        document.getElementById("section-admin-kelola-ruang").classList.toggle("hidden");
     }
 
     function logout() {
@@ -313,12 +337,30 @@
         if (selectVip) selectVip.innerHTML = options;
     }
 
+    function filterTabelRuangan() {
+        const q = document.getElementById("cari-ruangan").value.trim().toLowerCase();
+        if (!q) {
+            renderTabelRuangan(dataRuanganGlobal);
+            return;
+        }
+        const filtered = dataRuanganGlobal.filter(r =>
+            String(r.code).toLowerCase().includes(q) ||
+            String(r.lantai).toLowerCase().includes(q) ||
+            String(r.program).toLowerCase().includes(q)
+        );
+        renderTabelRuangan(filtered);
+    }
+
     /* ================================================================
        AKSI ADMIN: KELOLA DATA RUANGAN (TAMBAH / EDIT / HAPUS)
        ================================================================ */
     function editRuang(rowIndex) {
         const r = dataRuanganGlobal.find(x => x.rowIndex === rowIndex);
         if (!r) return;
+
+        // Buka panel kelola-ruang kalau sedang tertutup, supaya form yang
+        // diisi ini terlihat oleh admin.
+        document.getElementById("section-admin-kelola-ruang").classList.remove("hidden");
 
         document.getElementById("ruang-row-index").value = r.rowIndex;
         document.getElementById("ruang-lantai").value = r.lantai;
@@ -481,6 +523,22 @@
                 ${isAdmin ? aksiAdminHtml(b) : ""}
             </tr>
         `).join("");
+    }
+
+    function filterTabelPinjaman() {
+        const q = document.getElementById("cari-pinjaman").value.trim().toLowerCase();
+        if (!q) {
+            renderTabelPinjaman(dataPinjamanGlobal);
+            return;
+        }
+        const filtered = dataPinjamanGlobal.filter(b =>
+            String(b.pemohon).toLowerCase().includes(q) ||
+            String(b.roomCode).toLowerCase().includes(q) ||
+            String(b.nim).toLowerCase().includes(q) ||
+            String(b.keperluan).toLowerCase().includes(q) ||
+            String(b.status).toLowerCase().includes(q)
+        );
+        renderTabelPinjaman(filtered);
     }
 
     /* ================================================================

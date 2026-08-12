@@ -209,6 +209,73 @@ button:focus-visible { outline: 2px solid var(--navy-700); outline-offset: 2px; 
 }
 .auth-tabs button.active { background: var(--navy-950); color: white; }
 
+/* --- TAB NAVIGASI DASHBOARD --- */
+.dash-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--neutral-200);
+    margin-bottom: 24px;
+    overflow-x: auto;
+}
+.dash-tab-btn {
+    background: transparent;
+    color: var(--ink-600);
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 12px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    box-shadow: none;
+}
+.dash-tab-btn:hover { background: var(--neutral-50); color: var(--navy-950); }
+.dash-tab-btn.active {
+    color: var(--navy-950);
+    border-bottom: 2px solid var(--gold-600);
+    background: transparent;
+}
+.dash-tab-panel { animation: fadeIn .15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.tab-panel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.btn-toolbar {
+    background: var(--white);
+    color: var(--navy-800);
+    border: 1px solid var(--navy-700);
+    margin: 0;
+}
+.btn-toolbar:hover { background: var(--navy-950); color: white; }
+
+/* --- PENCARIAN TABEL --- */
+.table-search { margin: 10px 0 4px; }
+.table-search input {
+    background: var(--neutral-50);
+}
+
+/* --- TABEL DENGAN TINGGI TERBATAS (SCROLL INTERNAL) --- */
+.table-scroll {
+    overflow: auto;
+    max-height: 440px;
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-md);
+    margin-top: 10px;
+}
+.table-scroll table { margin-top: 0; }
+.table-scroll th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--white);
+}
+
 .field-error { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
 
 /* --- TABEL --- */
