@@ -10,7 +10,7 @@
 /* ================================================================
        KONFIGURASI
        ================================================================ */
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj4hYY-pF1IbsKgTEYqW5dGrrUJYaC7e_S4SyR8dVlKkK35oSx-1I2Vfdz07sBoTT4Tg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1gxUfiS01WKtFETlcq1ecfBZrNU99t-i-R8WhMYTnFcLzvCoA3l7bvFrgwoIfFFDE9Q/exec";
     const JSONP_TIMEOUT_MS = 15000;
 
     let currentUser = null;
