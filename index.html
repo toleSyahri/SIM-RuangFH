@@ -116,6 +116,7 @@
             <button type="button" class="dash-tab-btn hidden" id="dash-tab-btn-vip" data-tab="vip" onclick="switchDashTab('vip')">Booking VIP</button>
             <button type="button" class="dash-tab-btn" data-tab="ruangan" onclick="switchDashTab('ruangan')">Data Ruangan</button>
             <button type="button" class="dash-tab-btn" data-tab="riwayat" onclick="switchDashTab('riwayat')">Riwayat Peminjaman</button>
+            <button type="button" class="dash-tab-btn hidden" id="dash-tab-btn-laporan" data-tab="laporan" onclick="switchDashTab('laporan')">Laporan</button>
         </div>
 
         <!-- TAB: AJUKAN PEMINJAMAN -->
@@ -337,6 +338,72 @@
         </div>
         <!-- /TAB: RIWAYAT PEMINJAMAN -->
 
+        <!-- TAB: LAPORAN (KHUSUS ADMIN) -->
+        <div class="dash-tab-panel hidden" id="dash-tab-laporan">
+
+        <div id="section-laporan" class="card">
+            <p class="eyebrow">Khusus Admin</p>
+            <h3>Buat Laporan Peminjaman</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dari Tanggal</label>
+                    <input type="date" id="laporan-tanggal-mulai">
+                </div>
+                <div class="form-group">
+                    <label>Sampai Tanggal</label>
+                    <input type="date" id="laporan-tanggal-akhir">
+                </div>
+                <div class="form-group">
+                    <label>Ruangan (opsional)</label>
+                    <select id="laporan-ruang">
+                        <option value="">-- Semua Ruangan --</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" id="btn-buat-laporan" onclick="generateLaporan()">Tampilkan Laporan</button>
+            <p style="font-size:12px; color:var(--ink-600); text-align:center; margin-top:8px;">Kosongkan tanggal untuk menyertakan seluruh data yang tercatat.</p>
+        </div>
+
+        <div id="laporan-hasil" class="hidden">
+            <div class="card" id="laporan-ringkasan-card">
+                <p class="eyebrow">Ringkasan</p>
+                <h3>Statistik Persetujuan</h3>
+                <div class="laporan-stat-grid" id="laporan-stat-grid"></div>
+            </div>
+
+            <div class="card">
+                <p class="eyebrow">Pemakaian Ruangan</p>
+                <h3>Rekap Jumlah Peminjaman per Ruangan</h3>
+                <p id="laporan-ruang-ekstrem" style="text-align:center; font-size:13px; color:var(--ink-600);"></p>
+                <div class="table-scroll" style="max-height:320px;">
+                    <table>
+                        <thead>
+                            <tr><th>Kode Ruang</th><th>Lantai</th><th>Jumlah Peminjaman</th></tr>
+                        </thead>
+                        <tbody id="laporan-tabel-rekap-ruang"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <p class="eyebrow">Rincian</p>
+                <h3>Daftar Lengkap Peminjaman pada Periode Ini</h3>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th>Tanggal & Jam</th><th>Kode Ruang</th><th>Pemohon</th><th>NIM/NIP</th><th>Keperluan</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="laporan-tabel-detail"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button type="button" id="btn-unduh-laporan" class="btn-success" onclick="unduhLaporanPDF()">📄 Unduh sebagai PDF</button>
+        </div>
+
+        </div>
+        <!-- /TAB: LAPORAN -->
+
         <!-- FOOTER CONTACT -->
         <div class="contact-info">
             <strong>Petugas Pengelola / Admin:</strong> Syahri (syahrisyahri@unesa.ac.id) | <strong>WA:</strong> 081331382680
@@ -388,6 +455,9 @@
     </div>
 </div>
 
+<!-- Library untuk membuat PDF laporan (dipakai fitur Laporan admin) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js"></script>
 <script src="app.js"></script>
 
 </body>
