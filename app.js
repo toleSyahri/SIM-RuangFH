@@ -11,7 +11,7 @@
        KONFIGURASI
        ================================================================ */
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1gxUfiS01WKtFETlcq1ecfBZrNU99t-i-R8WhMYTnFcLzvCoA3l7bvFrgwoIfFFDE9Q/exec";
-    const JSONP_TIMEOUT_MS = 15000;
+    const JSONP_TIMEOUT_MS = 60000;
 
     let currentUser = null;
     let dataRuanganGlobal = [];
